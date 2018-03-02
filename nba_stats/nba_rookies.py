@@ -26,7 +26,7 @@ def clean_ids(df):
     
     for index, player_id in zip(indices, ids):
         df.iloc[index, df.columns.get_loc('IDs')] = player_id
-    df.to_csv("nba_drafts.csv", index=False)
+    return df
 
 
 def create_soup(template, parser, year):
