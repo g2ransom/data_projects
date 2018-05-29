@@ -5,10 +5,12 @@ import requests
 from bs4 import BeautifulSoup
 import re
 from nltk.tokenize import sent_tokenize, word_tokenize
+import os
 
 company_name = 'Apple Computer Inc.'
 
-api = articleAPI("c412d5f33f9142c690134d02ee632940")
+key = os.environ['NYT_API']
+api = articleAPI(key)
 
 nyt_df = pd.read_csv('nytimes_corps.csv')
 corps = nyt_df.comnam.tolist()
