@@ -36,17 +36,6 @@ def company_search(company_name, indicator):
 	time.sleep(1)
 	return pd.DataFrame() if not rows else pd.concat(rows, ignore_index=True) 
 
-# for i in indicators:
-# 	print(company_search(company_name, i, page=1), i)
-
-# print(company_search(company_name, 'fire sale', page=1))
-
-# dfs = [company_search(company_name, ind) for ind in indicators]
-# dfs = map(lambda x: company_search(company_name, x), indicators)
-# df = pd.concat(dfs, ignore_index=True)
-# print(df.head())
-# df.to_csv('nyt_sample.csv', index=False)
-
 
 def get_url_text(url):
 	r = requests.get(url)
@@ -55,16 +44,7 @@ def get_url_text(url):
 	return [p.text.encode('utf-8') for p in all_text]
 
 
-def split_text(raw_text):
-	text = re.sub('[^a-z\ \']+', " ", raw_text)
-	return list(text.split())
-
-
 def count_indicators(word_list, indicators): return sum([1 for word in word_list if word in indicators])
-
-# file = open('nyt_sample_1.txt', 'r')
-# text = file.read().lower().decode('utf-8')
-# file.close()
 
 
 '''Get three sentences of sentences in text that include indicators'''
@@ -74,9 +54,27 @@ def get_indicator_text(text, indicators):
 		for word in word_tokenize(sentences[i]) if word in indicators]
 	return c
 
-# print(get_indicator_text(text, indicators))
 
-# if __name__ == '__main__':
+if __name__ == '__main__':
+	dfs = map(lambda x: company_search(company_name, x), indicators)
+	df = pd.concat(dfs, ignore_index=True)
+	urls = df.url.tolist()
+	url_df = pd.DataFrame()
+	for url in urls:
+		page = url
+		text = get_url_text(url)
+		text = [w.decode('utf-8') for w in text]
+		text = ' '.join(text)
+		word_tokens = word_tokenize(text)
+		indicator_count = count_indicators(word_tokens, indicators)
+		indicator_text = get_indicator_text(text, indicators)
+		temp_df = pd.DataFrame({'url': page, 'indicator_count': indicator_count, 'indicator_text': indicator_text})
+		url_df = url_df.append(temp_df, ignore_index=True)
+		# texts = url_df.apply(lambda x: pd.Series(x['indicator_text']),axis=1).stack().reset_index(level=1, drop=True)
+		# texts.name = 'indicator_text'
+		# url_df = url_df.drop('indicator_text', axis=1).join(texts)
+	df = df.merge(url_df, how='left', on='url')
+	print(df.head())
 
 
 
