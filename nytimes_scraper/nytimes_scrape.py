@@ -28,10 +28,10 @@ def create_dict(search_item, company_name):
 	return row
 
 
-def company_search(company_name, indicator):
+def company_search(company_name, indicators, page=1):
 	search = api.search(q=company_name, begin_date='19620101', 
-						end_date='20180402', fq={'source': 'The New York Times', 'body': indicator}, 
-						fl=['web_url', 'pub_date'])
+						end_date='20180402', fq={'source': 'The New York Times', 'body': indicators}, 
+						fl=['web_url', 'pub_date'], page=page)
 	rows = [create_dict(item, company_name) for item in search['response']['docs']]
 	time.sleep(1)
 	return pd.DataFrame() if not rows else pd.concat(rows, ignore_index=True) 
@@ -55,9 +55,17 @@ def get_indicator_text(text, indicators):
 	return c
 
 
+def iterate_pages(company_name, indicators, end_range):
+	df = pd.DataFrame()
+	for i in range(1, end_range):
+		rows = company_search(company_name, indicators, page=i)
+		df = df.append(rows, ignore_index=True)
+		if len(rows.index) < 10:
+			return df
+
+
 if __name__ == '__main__':
-	dfs = map(lambda x: company_search(company_name, x), indicators)
-	df = pd.concat(dfs, ignore_index=True)
+	df = iterate_pages(company_name, indicators, 50)
 	urls = df.url.tolist()
 	url_df = pd.DataFrame()
 	for url in urls:
