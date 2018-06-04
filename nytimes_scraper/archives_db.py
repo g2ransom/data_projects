@@ -1,5 +1,7 @@
 import pandas as pd
+import sqlite3
 import requests
+import multiprocessing as mp
 import os
 from pprint import pprint
 
@@ -20,10 +22,15 @@ def archives_request(template, year, month, key=key):
 def parse_json(json_item):
 	dic = {}
 	dic['id'] = json_item['_id']
-	if json_item['abstract'] is not None:
-		dic['abstract'] = json_item['abstract'].encode('utf-8')
+	dic['body'] = json_item['body']
+	if json_item['body'] is not None:
+		dic['body'] = json_item['body'].encode('utf-8')
 	else:
-		dic['abstract'] = 'None'
+		dic['body'] = 'None'
+	# if json_item['abstract'] is not None:
+	# 	dic['abstract'] = json_item['abstract'].encode('utf-8')
+	# else:
+	# 	dic['abstract'] = 'None'
 	dic['headline'] = json_item['headline']['main'].encode('utf-8')
 	if json_item['keywords'] is not None:
 		dic['keywords'] = [json_item['keywords'][i]['value'] for i in range(len(json_item['keywords']))]
@@ -39,13 +46,29 @@ def parse_json(json_item):
 	return dic
 
 '''Drop new data into dataframe by chunks - month by month'''
-def sql_dump(df):
-	pass
+def update_database(dbfile, dbname, dataframe_sql_function, df):
+	try:
+		conn = sqlite3.connect(dbfile)
+		cur = conn.cursor()
+		return conn
+	except Error:
+		conn.close()
+		print "Update Failure"
+	finally:
+		dataframe_sql_function(dbname, conn, df)
+		print "Update Success!"
+		conn.close()
+
+
+def dataframe_tosql(dbname, conn, df):
+	df.to_sql(name=dbname, con=conn, if_exists="append", index=False)
 
 
 if __name__ == '__main__':
-	json = archives_request(template, 1851, 9)
-	rows = [parse_json(json_item) for json_item in json['response']['docs']]
+	json = archives_request(template, 2018, 1)
+	pool = mp.Pool(processes=4)
+	rows = [pool.apply(parse_json, args=(json_item,)) for json_item in json['response']['docs']]
+	# rows = [parse_json(json_item) for json_item in json['response']['docs']]
 	df = pd.DataFrame(rows)
 	print(df)
 
