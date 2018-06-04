@@ -22,15 +22,13 @@ def archives_request(template, year, month, key=key):
 def parse_json(json_item):
 	dic = {}
 	dic['id'] = json_item['_id']
-	dic['body'] = json_item['body']
-	if json_item['body'] is not None:
-		dic['body'] = json_item['body'].encode('utf-8')
-	else:
-		dic['body'] = 'None'
-	# if json_item['abstract'] is not None:
-	# 	dic['abstract'] = json_item['abstract'].encode('utf-8')
-	# else:
-	# 	dic['abstract'] = 'None'
+	try:
+		if json_item['abstract'] is not None:
+			dic['abstract'] = json_item['abstract'].encode('utf-8')
+		else:
+			dic['abstract'] = 'None'
+	except KeyError:
+			dic['abstract'] = 'None'
 	dic['headline'] = json_item['headline']['main'].encode('utf-8')
 	if json_item['keywords'] is not None:
 		dic['keywords'] = [json_item['keywords'][i]['value'] for i in range(len(json_item['keywords']))]
