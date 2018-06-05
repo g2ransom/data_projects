@@ -30,23 +30,30 @@ def parse_json(json_item):
 	except KeyError:
 			dic['abstract'] = 'None'
 	dic['headline'] = json_item['headline']['main'].encode('utf-8')
-	if json_item['keywords'] is not None:
-		dic['keywords'] = [json_item['keywords'][i]['value'] for i in range(len(json_item['keywords']))]
-	else:
-		dic['keywords'] = 'None'
+	# if json_item['keywords'] is not None:
+	# 	dic['keywords'] = [json_item['keywords'][i]['value'] for i in range(len(json_item['keywords']))]
+	# else:
+	# 	dic['keywords'] = 'None'
 	dic['date'] = json_item['pub_date']
 	if json_item['snippet'] is not None:
-		dic['snippet'] = json_item['snippet']
+		dic['snippet'] = json_item['snippet'].encode('utf-8')
 	else:
 		dic['snippet'] = 'None'
 	dic['source'] = json_item['source']
 	dic['url'] = json_item['web_url']
 	return dic
 
+
+'''Filter each dataframe by company name and divestment indicators'''
+def filter_articles(df):
+	pass
+
+
 '''Drop new data into dataframe by chunks - month by month'''
 def update_database(dbfile, dbname, dataframe_sql_function, df):
 	try:
 		conn = sqlite3.connect(dbfile)
+		conn.text_factory = str
 		cur = conn.cursor()
 		return conn
 	except Error:
@@ -63,11 +70,13 @@ def dataframe_tosql(dbname, conn, df):
 
 
 if __name__ == '__main__':
-	json = archives_request(template, 2018, 1)
-	pool = mp.Pool(processes=4)
-	rows = [pool.apply(parse_json, args=(json_item,)) for json_item in json['response']['docs']]
-	# rows = [parse_json(json_item) for json_item in json['response']['docs']]
-	df = pd.DataFrame(rows)
-	print(df)
+	for year in range(1962, 2019):
+		for month in range(1, 13): 
+			json = archives_request(template, year, month)
+			pool = mp.Pool(processes=4)
+			rows = [pool.apply(parse_json, args=(json_item,)) for json_item in json['response']['docs']]
+			df = pd.DataFrame(rows)
+			update_database("nytimes.db", "nytimes", dataframe_tosql, df)
+	print("SQL Dump Complete!")
 
 
